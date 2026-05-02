@@ -32,9 +32,9 @@ class Twist {
         twistConnected = true;
       }
     }
-    int getTwistCount() {
+    int getTwistDiff() {
       if (twistConnected) {
-        return twist.getCount();
+        return twist.getDiff();
       }
       return INT_MIN;
     }
@@ -76,6 +76,13 @@ class LEDStripWrapper {
       }
       FastLED.show();
       Serial.println(s);
+    }
+    static void smallStepTest() {
+      for (int i = 0; i < 64; i++) {
+        int ledIndex = pixelToLedIndex[i];
+        leds[ledIndex] = CRGB(i, i, i);
+      }
+      FastLED.show();
     }
     static void rampTestForward() {
       {
@@ -139,27 +146,41 @@ class App {
           LEDStripWrapper::diagTest();
         } else if (teststr.equals("clear")) {
           LEDStripWrapper::clear();
+        } else if (teststr.equals("runSmallStepTest")) {
+          LEDStripWrapper::smallStepTest();
         } else {
           String msg("Unknown command: '");
           msg.concat(teststr);
           msg.concat("'. Expected one of ");
-          msg.concat("runSpeedTest, runRampTest, runDiagTest, clear.");
+          msg.concat("runSpeedTest, runRampTest, runDiagTest, runSmallStepTest, clear.");
           Serial.println(msg);
         }
       }
     }
     void handleTwist() {
-      int twistCount = twist->getTwistCount();
-      if (twistCount != INT_MIN) {
+      int twistCount = twist->getTwistDiff();
+      if (twistCount != INT_MIN && twistCount != 0) {
+        int newBrightness;
         if (twistCount < 0) {
-          brightness = max(brightness - 1, 0);
+          newBrightness = max(brightness - 1, 0);
         } else {
-          brightness = min(brightness + 1, EIGHTH_WHITE);
+          newBrightness = min(brightness + 1, 16);
+        }
+        if (brightness == newBrightness) {
+          return;
         }
         for (int i = 0; i < NUM_LEDS; i++) {
-          leds[i] = CRGB(brightness, brightness, brightness);;
+          leds[i] = CRGB(newBrightness, newBrightness, newBrightness);;
         }
         FastLED.show();
+        String msg("Twist count: ");
+        msg.concat(twistCount);
+        msg.concat(", brightness: ");
+        msg.concat(brightness);
+        msg.concat(", newBrightness: ");
+        msg.concat(newBrightness);
+        Serial.println(msg);
+        brightness = newBrightness;
       }
     }
   public:
