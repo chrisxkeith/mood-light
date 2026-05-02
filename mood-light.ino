@@ -48,30 +48,18 @@ class LEDStripWrapper {
       }
     }
     static void rampTestForward() {
-      Timer timer("rampTestForward()");
-      // Draw a linear ramp of brightnesses to showcase the difference between
-      // the HD and non-HD mode.
-      const int NUM_TO_TEST = NUM_LEDS;
-      for (int i = 0; i < NUM_TO_TEST; i++) {
-          int brightness = map(i, 0, NUM_TO_TEST - 1, 0, 255);
-          CRGB c(brightness, brightness, brightness);  // Just make a shade of white.
-          leds[i] = c;
+      {
+        Timer timer("rampTestForward()");
+        // Draw a linear ramp of brightnesses to showcase the difference between
+        // the HD and non-HD mode.
+        const int NUM_TO_TEST = NUM_LEDS;
+        for (int i = 0; i < NUM_TO_TEST; i++) {
+            int brightness = map(i, 0, NUM_TO_TEST - 1, 0, 255);
+            CRGB c(brightness, brightness, brightness);  // Just make a shade of white.
+            leds[i] = c;
+        }
+        FastLED.show();  // All LEDs are now displayed.
       }
-      FastLED.show();  // All LEDs are now displayed.
-      delay(5000);
-      clear();
-    }
-    static void rampTestBackward() {
-      Timer timer("rampTestBackward()");
-      // Draw a linear ramp of brightnesses to showcase the difference between
-      // the HD and non-HD mode.
-      const int NUM_TO_TEST = NUM_LEDS;
-      for (int i = NUM_TO_TEST - 1; i > -1; i--) {
-          int brightness = map(i, 0, NUM_TO_TEST - 1, 0, 255);
-          CRGB c(brightness, brightness, brightness);  // Just make a shade of white.
-          leds[i] = c;
-      }
-      FastLED.show();  // All LEDs are now displayed.
       delay(5000);
       clear();
     }
@@ -80,10 +68,6 @@ class LEDStripWrapper {
         leds[i] = CRGB::Black;
       }
       FastLED.show();
-    }
-    static void startup() {
-      clear();
-      speedTest();
     }
 };
 uint32_t LEDStripWrapper::theDelay = 0;
@@ -109,7 +93,7 @@ int LEDStripWrapper::pixelToLedIndex[NUM_LEDS] = {
 class App {
   private:
     String configs[2] = {
-      "~2025Dec26:09:42", // date +"%Y%b%d:%H:%M"
+      "~2026May02:10:16", // date +"%Y%b%d:%H:%M"
       "https://github.com/chrisxkeith/mood-light.git",
     };
 
@@ -121,7 +105,6 @@ class App {
           LEDStripWrapper::speedTest();
         } else if (teststr.equals("runRampTest")) {
           LEDStripWrapper::rampTestForward();
-          LEDStripWrapper::rampTestBackward();
         } else {
           String msg("Unknown command: '");
           msg.concat(teststr);
@@ -133,13 +116,16 @@ class App {
     }
   public:
     void setup() {
-      Timer timer("setup()");
-      delay(500); // power-up safety delay
-      Serial.begin(115200);
-      Serial.println("setup() started.");
-      Wire.begin();
-      FastLED.addLeds<APA102, LEDStripWrapper::DATA_PIN, LEDStripWrapper::CLOCK_PIN, BGR>(leds, NUM_LEDS);
-      LEDStripWrapper::startup();
+      {
+        Timer timer("setup()");
+        delay(500); // power-up safety delay
+        Serial.begin(115200);
+        Serial.println("setup() started.");
+        Wire.begin();
+        FastLED.addLeds<APA102, LEDStripWrapper::DATA_PIN, LEDStripWrapper::CLOCK_PIN, BGR>(leds, NUM_LEDS);
+        LEDStripWrapper::clear();
+      }
+      LEDStripWrapper::speedTest();
     }
     void loop() {
       checkSerial();
