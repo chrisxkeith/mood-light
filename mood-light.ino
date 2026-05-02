@@ -1,6 +1,4 @@
 #include <Wire.h>
-#include <vector>
-#include <set>
 
 class Timer {
   private:
@@ -20,16 +18,37 @@ class Timer {
     }
 };
 
+#include <climits>
+#include <SparkFun_Qwiic_Twist_Arduino_Library.h>
+class Twist {
+  private:
+    TWIST twist;
+    bool  twistConnected = false;
+  public:
+    Twist() {
+      if (twist.begin() == false) {
+        Serial.println("Twist does not appear to be connected. Please check wiring. Continuing ...");
+      } else {
+        twistConnected = true;
+      }
+    }
+    int getTwistCount() {
+      if (twistConnected) {
+        return twist.getCount();
+      }
+      return INT_MIN;
+    }
+};
+Twist* twist = nullptr;
+
 #include <FastLED.h>
 const int     LEDS_WIDTH = 16;
 const int     LEDS_HEIGHT = 16;
 const int     NUM_LEDS = LEDS_WIDTH * LEDS_HEIGHT;
 CRGB          leds[NUM_LEDS] = {0};     // Software gamma mode.
 
-#define HALF_WHITE 0x808080
-#define QUARTER_WHITE 0x404040
-#define EIGHTH_WHITE 0x202020
-#define WHITENESS EIGHTH_WHITE
+#define EIGHTH_WHITE 0x20
+#define WHITENESS CRGB(EIGHTH_WHITE, EIGHTH_WHITE, EIGHTH_WHITE);
 class LEDStripWrapper {
   private:
     static int pixelToLedIndex[NUM_LEDS];
@@ -106,6 +125,7 @@ class App {
       "~2026May02:10:16", // date +"%Y%b%d:%H:%M"
       "https://github.com/chrisxkeith/mood-light.git",
     };
+    int brightness = 0;
 
     void checkSerial() {
       if (Serial.available() > 0) {
@@ -128,6 +148,20 @@ class App {
         }
       }
     }
+    void handleTwist() {
+      int twistCount = twist->getTwistCount();
+      if (twistCount != INT_MIN) {
+        if (twistCount < 0) {
+          brightness = max(brightness - 1, 0);
+        } else {
+          brightness = min(brightness + 1, EIGHTH_WHITE);
+        }
+        for (int i = 0; i < NUM_LEDS; i++) {
+          leds[i] = CRGB(brightness, brightness, brightness);;
+        }
+        FastLED.show();
+      }
+    }
   public:
     void setup() {
       {
@@ -138,10 +172,12 @@ class App {
         Wire.begin();
         FastLED.addLeds<APA102, LEDStripWrapper::DATA_PIN, LEDStripWrapper::CLOCK_PIN, BGR>(leds, NUM_LEDS);
         LEDStripWrapper::clear();
+        twist = new Twist();
       }
       LEDStripWrapper::speedTest();
     }
     void loop() {
+      handleTwist();
       checkSerial();
     }
 };
