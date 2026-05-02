@@ -20,46 +20,6 @@ class Timer {
     }
 };
 
-class Utils {
-  private:
-    static int lastRand;
-    const static int RAND_INCREMENT = 37;
-  public:
-    static bool diagnosing;
-
-    static void doWait(String s) {
-      if (diagnosing) {
-        Serial.print(s);
-        Serial.println(": Waiting for user input. Type any character and press Enter to continue...");
-        while (Serial.available() == 0) {
-          ; // wait for input
-        }
-        while (Serial.available() > 0) {
-          Serial.read(); // clear input buffer
-        }
-      }
-    }
-
-    static int myRand() {
-      int ret = lastRand + RAND_INCREMENT;
-      if (ret < 0) {
-        ret = 0;
-      }
-      lastRand = ret;
-      return ret;
-    }
-    static void resetRand() {
-      lastRand = 0;
-    }
-    static void halt() {
-      Serial.println("halting. Restart required.");
-      while (true) { ; }
-    }
-
-};
-int Utils::lastRand = 0;
-bool Utils::diagnosing = true;
-
 #include <FastLED.h>
 const int     LEDS_WIDTH = 16;
 const int     LEDS_HEIGHT = 16;
