@@ -36,16 +36,27 @@ class LEDStripWrapper {
   public:
     static const int  DATA_PIN = 8;   // green wire
     static const int  CLOCK_PIN = 10; // blue wire
-    static uint32_t   theDelay;
     static void speedTest() {
       Timer timer("speedTest()");
       for (int i = 0; i < NUM_LEDS; i++) {
         leds[i] = WHITENESS;
         FastLED.show();
-        // delay(theDelay);
         leds[i] = CRGB::Black;
         FastLED.show();
       }
+    }
+    static void diagTest() {
+      String s("brightnesses: ");
+      for (int i = 0; i < 16; i++) {
+        int pixelIndex = i * LEDS_WIDTH + i;
+        int ledIndex = pixelToLedIndex[pixelIndex];
+        int brightness = map(i, 0, 15, 0, 255);
+        s.concat(brightness);
+        s.concat(" ");
+        leds[ledIndex] = CRGB(brightness, brightness, brightness);;
+      }
+      FastLED.show();
+      Serial.println(s);
     }
     static void rampTestForward() {
       {
@@ -70,7 +81,6 @@ class LEDStripWrapper {
       FastLED.show();
     }
 };
-uint32_t LEDStripWrapper::theDelay = 0;
 int LEDStripWrapper::pixelToLedIndex[NUM_LEDS] = {
    15,  14,  13,  12,  11,  10,   9,   8,   7,   6,   5,   4,   3,   2,   1,   0,
    16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
@@ -105,11 +115,15 @@ class App {
           LEDStripWrapper::speedTest();
         } else if (teststr.equals("runRampTest")) {
           LEDStripWrapper::rampTestForward();
+        } else if (teststr.equals("runDiagTest")) {
+          LEDStripWrapper::diagTest();
+        } else if (teststr.equals("clear")) {
+          LEDStripWrapper::clear();
         } else {
           String msg("Unknown command: '");
           msg.concat(teststr);
           msg.concat("'. Expected one of ");
-          msg.concat("  runSpeedTest or runRampTest.");
+          msg.concat("runSpeedTest, runRampTest, runDiagTest, clear.");
           Serial.println(msg);
         }
       }
