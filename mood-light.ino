@@ -23,14 +23,15 @@ class Timer {
 class Twist {
   private:
     TWIST twist;
-    bool  twistConnected = false;
   public:
-    Twist() {
+    bool  twistConnected = false;
+    bool begin() {
       if (twist.begin() == false) {
         Serial.println("Twist does not appear to be connected. Please check wiring. Continuing ...");
-      } else {
-        twistConnected = true;
+        return false;
       }
+      twistConnected = true;
+      return true;
     }
     int getTwistDiff() {
       if (twistConnected) {
@@ -140,15 +141,19 @@ class App {
       LEDStripWrapper::rampTestForward(); delay(3000);
       LEDStripWrapper::smallStepTest(); delay(3000);
     }
-
+    void dump() {
+      for (int i = 0; i < 2; i++) {
+        Serial.println(configs[i]);
+      }
+      Serial.println(twist->twistConnected ? "Twist is connected." :
+                                             "Twist is not connected.");
+    }
     void checkSerial() {
       if (Serial.available() > 0) {
         String teststr = Serial.readString();  // read until timeout
         teststr.trim();                        // remove any \r \n whitespace at the end of the String
         if (teststr.equals("?")) {
-          for (int i = 0; i < 2; i++) {
-            Serial.println(configs[i]);
-          }
+          dump();
         } else if (teststr.equals("clear")) {
           LEDStripWrapper::clear();
         } else if (teststr.equals("runAllTests")) {
@@ -196,6 +201,22 @@ class App {
         brightness = newBrightness;
       }
     }
+    void startTwist() {
+      if (twist == nullptr) {
+        twist = new Twist();
+        for (int i = 0; i < 3; i++) {
+          if (twist->begin()) {
+            break;
+          }
+          delay(1000);
+        }
+        if (twist->twistConnected) {
+          Serial.println("Twist is connected.");
+        } else {
+          Serial.println("Twist is not connected after 3 tries.");
+        }
+      }
+    }
   public:
     void setup() {
       {
@@ -206,10 +227,10 @@ class App {
         Wire.begin();
         FastLED.addLeds<APA102, LEDStripWrapper::DATA_PIN, LEDStripWrapper::CLOCK_PIN, BGR>(leds, NUM_LEDS);
         LEDStripWrapper::clear();
-        twist = new Twist();
       }
     }
     void loop() {
+      startTwist();
       handleTwist();
       checkSerial();
     }
