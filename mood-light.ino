@@ -129,30 +129,43 @@ int LEDStripWrapper::pixelToLedIndex[NUM_LEDS] = {
 class App {
   private:
     String configs[2] = {
-      "~2026May02:10:16", // date +"%Y%b%d:%H:%M"
+      "~Sat Oct 24 03:13:03 PM PDT 2026", // date +"%Y%b%d:%H:%M"
       "https://github.com/chrisxkeith/mood-light.git",
     };
     int brightness = 0;
+
+    void runAllTests() {
+      LEDStripWrapper::speedTest(); delay(3000);
+      LEDStripWrapper::diagTest(); delay(3000);
+      LEDStripWrapper::rampTestForward(); delay(3000);
+      LEDStripWrapper::smallStepTest(); delay(3000);
+    }
 
     void checkSerial() {
       if (Serial.available() > 0) {
         String teststr = Serial.readString();  // read until timeout
         teststr.trim();                        // remove any \r \n whitespace at the end of the String
-        if (teststr.equals("runSpeedTest")) {
-          LEDStripWrapper::speedTest();
-        } else if (teststr.equals("runRampTest")) {
-          LEDStripWrapper::rampTestForward();
-        } else if (teststr.equals("runDiagTest")) {
-          LEDStripWrapper::diagTest();
+        if (teststr.equals("?")) {
+          for (int i = 0; i < 2; i++) {
+            Serial.println(configs[i]);
+          }
         } else if (teststr.equals("clear")) {
           LEDStripWrapper::clear();
+        } else if (teststr.equals("runAllTests")) {
+          runAllTests();
+        } else if (teststr.equals("runDiagTest")) {
+          LEDStripWrapper::diagTest();
+        } else if (teststr.equals("runRampTest")) {
+          LEDStripWrapper::rampTestForward();
         } else if (teststr.equals("runSmallStepTest")) {
           LEDStripWrapper::smallStepTest();
+        } else if (teststr.equals("runSpeedTest")) {
+          LEDStripWrapper::speedTest();
         } else {
           String msg("Unknown command: '");
           msg.concat(teststr);
           msg.concat("'. Expected one of ");
-          msg.concat("runSpeedTest, runRampTest, runDiagTest, runSmallStepTest, clear.");
+          msg.concat("?, clear, runAllTests, runDiagTest, runRampTest, runSmallStepTest, runSpeedTest.");
           Serial.println(msg);
         }
       }
@@ -195,7 +208,6 @@ class App {
         LEDStripWrapper::clear();
         twist = new Twist();
       }
-      LEDStripWrapper::speedTest();
     }
     void loop() {
       handleTwist();
