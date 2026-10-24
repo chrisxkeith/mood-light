@@ -162,9 +162,9 @@ class App {
       if (twistCount != INT_MIN && twistCount != 0) {
         int newBrightness;
         if (twistCount < 0) {
-          newBrightness = max(brightness - 1, 0);
+          newBrightness = brightness > 0 ? brightness - 1 : 0;
         } else {
-          newBrightness = min(brightness + 1, 16);
+          newBrightness = brightness < 16 ? brightness + 1 : 16;
         }
         if (brightness == newBrightness) {
           return;
