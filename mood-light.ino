@@ -145,6 +145,7 @@ class App {
       for (int i = 0; i < 2; i++) {
         Serial.println(configs[i]);
       }
+      Serial.println("Brightness: " + String(brightness));
       Serial.println(twist->twistConnected ? "Twist is connected." :
                                              "Twist is not connected.");
     }
@@ -156,6 +157,10 @@ class App {
           dump();
         } else if (teststr.equals("clear")) {
           LEDStripWrapper::clear();
+        } else if (teststr.equals("brighten")) {
+          setBrightness(brightness < 15 ? brightness + 1 : 15);
+        } else if (teststr.equals("dim")) {
+          setBrightness(brightness > 0 ? brightness - 1 : 0);
         } else if (teststr.equals("runAllTests")) {
           runAllTests();
         } else if (teststr.equals("runDiagTest")) {
@@ -170,10 +175,22 @@ class App {
           String msg("Unknown command: '");
           msg.concat(teststr);
           msg.concat("'. Expected one of ");
-          msg.concat("?, clear, runAllTests, runDiagTest, runRampTest, runSmallStepTest, runSpeedTest.");
+          msg.concat("?, clear, brighten, dim, runAllTests, runDiagTest, runRampTest, runSmallStepTest, runSpeedTest.");
           Serial.println(msg);
         }
       }
+    }
+    void setBrightness(int newBrightness) {
+      if (newBrightness < 0 || newBrightness > 15) {
+        Serial.println("Brightness must be between 0 and 15.");
+        return;
+      }
+      brightness = newBrightness;
+      for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = CRGB(brightness, brightness, brightness);;
+      }
+      FastLED.show();
+      Serial.println("Brightness set to " + String(brightness));
     }
     void handleTwist() {
       int twistCount = twist->getTwistDiff();
@@ -182,15 +199,12 @@ class App {
         if (twistCount < 0) {
           newBrightness = brightness > 0 ? brightness - 1 : 0;
         } else {
-          newBrightness = brightness < 16 ? brightness + 1 : 16;
+          newBrightness = brightness < 15 ? brightness + 1 : 15;
         }
         if (brightness == newBrightness) {
           return;
         }
-        for (int i = 0; i < NUM_LEDS; i++) {
-          leds[i] = CRGB(newBrightness, newBrightness, newBrightness);;
-        }
-        FastLED.show();
+        setBrightness(newBrightness);
         String msg("Twist count: ");
         msg.concat(twistCount);
         msg.concat(", brightness: ");
@@ -227,11 +241,12 @@ class App {
         Wire.begin();
         FastLED.addLeds<APA102, LEDStripWrapper::DATA_PIN, LEDStripWrapper::CLOCK_PIN, BGR>(leds, NUM_LEDS);
         LEDStripWrapper::clear();
+        setBrightness(1);
       }
     }
     void loop() {
-      startTwist();
-      handleTwist();
+//      startTwist();
+//      handleTwist();
       checkSerial();
     }
 };
